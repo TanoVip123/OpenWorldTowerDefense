@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 
-public class MovementCommandProcessingSystem : IGameSystem, IFixedUpdatableSystem
+public class MovementCommandProcessingSystem : IGameSystem, IUpdatableSystem
 {
     private World _world;
     public void Initialize(World world)
@@ -14,7 +14,7 @@ public class MovementCommandProcessingSystem : IGameSystem, IFixedUpdatableSyste
 
     public void Shutdown() => Debug.Log("MovementCommandProcessingSystem shutdown");
 
-    public void FixedUpdate(float deltaTime)
+    public void Update(float deltaTime)
     {
         if (_world.Commands.GetCommands(out List<MoveCommand> movementCommands) && movementCommands.Count > 0)
         {

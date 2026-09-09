@@ -5,7 +5,6 @@ using UnityEngine;
 
 public sealed class World
 {
-
     private interface IComponentPool
     {
         public void Remove(EntityID entity);
@@ -126,10 +125,16 @@ public sealed class World
     // This is a more efficient structure for querying entities by component type, which is a common operation in ECS.
     private Dictionary<Type, IComponentPool> _entityComponentPool;
 
+    // A dictionary mapping EntityID to a set of component pools that the entity is part of. This allows for efficient removal of all components associated with an entity when it is unregistered.
+    private Dictionary<EntityID, HashSet<IComponentPool>> _entityPools;
+
     // Still need reference to gameObject for now since we need to manipulate the GameObject in presentation system.
     private Dictionary<EntityID, GameObject> _entityObjects;
 
+    // Entity Registry
+    private HashSet<EntityID> _registeredEntities;
     // Event and Command State
+
     public EventBus EventBus { get; private set; }
     public CommandBuffer Commands { get; private set; }
     public EventBuffer Events { get; private set; }
@@ -146,11 +151,15 @@ public sealed class World
     private long _worldEventBufferVersionUpdate;
     private long _worldEventBufferVersionFixedUpdate;
 
+    // Grid state
+    public GridMap GridMap { get; private set; }
+
     public enum EWorldPhase
     {
         Command,
         Simulation,
         EventProcessing,
+        DataProcessing,
         Presentation
     }
 
@@ -160,6 +169,10 @@ public sealed class World
         EventBus = new EventBus();
         Commands = new CommandBuffer();
         Events = new EventBuffer();
+        GridMap = new GridMap();
+
+        // Initialize GridMap
+        GridMap.initialize();
 
         // Initialize Entity State
         selectedEntities = new List<EntityID>();
@@ -168,6 +181,8 @@ public sealed class World
         // Initialize Entity Data
         _entityComponentPool = new Dictionary<Type, IComponentPool>();
         _entityObjects = new Dictionary<EntityID, GameObject>();
+        _entityPools = new Dictionary<EntityID, HashSet<IComponentPool>>();
+        _registeredEntities = new HashSet<EntityID>();
 
         // Initialize component pools for each component type. This allows us to efficiently manage components of different types.
         foreach (Type componentType in ComponentRegistry.Types)
@@ -186,7 +201,8 @@ public sealed class World
             [EWorldPhase.Command] = new WorldPhase(),
             [EWorldPhase.Simulation] = new WorldPhase(),
             [EWorldPhase.EventProcessing] = new WorldPhase(),
-            [EWorldPhase.Presentation] = new WorldPhase()
+            [EWorldPhase.Presentation] = new WorldPhase(),
+            [EWorldPhase.DataProcessing] = new WorldPhase()
         };
 
         // Initialize versioning
@@ -199,7 +215,8 @@ public sealed class World
     public EntityID RegisterEntity()
     {
         EntityID entityId = EntityIDGenerator.GenerateID(); // Generate a unique EntityID
-
+        _entityPools[entityId] = new HashSet<IComponentPool>(); // Initialize an empty set of component pools for this entity
+        _registeredEntities.Add(entityId);
         Debug.Log($"EntityView with EntityID {entityId} registered to the world.");
         return entityId;
     }
@@ -208,10 +225,25 @@ public sealed class World
     public EntityID RegisterEntity(GameObject entityObject)
     {
         EntityID entityId = EntityIDGenerator.GenerateID(); // Generate a unique EntityID
+        _entityPools[entityId] = new HashSet<IComponentPool>();
         _entityObjects[entityId] = entityObject; // Store the GameObject for this entity
+        _registeredEntities.Add(entityId);
 
         Debug.Log($"EntityView with EntityID {entityId} registered to the world.");
         return entityId;
+    }
+
+    public bool UnregisterEntity(EntityID entityId)
+    {
+        foreach (IComponentPool pool in _entityPools[entityId])
+        {
+            pool.Remove(entityId);
+        }
+        _entityPools.Remove(entityId);
+        _entityObjects.Remove(entityId);
+        _registeredEntities.Remove(entityId);
+        Debug.Log($"EntityView with EntityID {entityId} unregistered from the world.");
+        return true;
     }
 
     // Update is called once per frame
@@ -234,7 +266,8 @@ public sealed class World
         // Currently only Presentation Systems need to be called in update.
         // The input System is handled by Unity's so it is also considered to be an "Update type" System.
         Phases[EWorldPhase.Presentation].Update(deltaTime);
-
+        Phases[EWorldPhase.Command].Update(deltaTime);
+        Phases[EWorldPhase.DataProcessing].Update(deltaTime);
         _worldEventBufferVersionUpdate = Events.Version;
 
         // For clean lifecycle ownership, Update clock is incharge of updating EventBuffer.
@@ -244,6 +277,7 @@ public sealed class World
 
     }
 
+    // Only Physics Sync should be in FixedUpdate
     public void FixedUpdate(float fixedDeltaTime)
     {
         // Debug.Log($"World FixedUpdate checked");
@@ -255,8 +289,7 @@ public sealed class World
 
         // Debug.Log("World FixedUpdate started");
 
-        // Currently only Simulation Systems need to be called in fixed update.
-        Phases[EWorldPhase.Command].FixedUpdate(fixedDeltaTime);
+        // TODO: Only Simulation Systems need to be called in fixed update since it syncs the physics simulation. Need fixing.
         Phases[EWorldPhase.EventProcessing].FixedUpdate(fixedDeltaTime);
         Phases[EWorldPhase.Simulation].FixedUpdate(fixedDeltaTime);
 
@@ -290,12 +323,14 @@ public sealed class World
     {
         // We make sure to create an entry for each entity in RegisterEntity, so we can assume the entityId is always valid and has an entry in _entityComponents.
         ((ComponentPool<T>)_entityComponentPool[typeof(T)]).Add(entityId, component);
+        _entityPools[entityId].Add(_entityComponentPool[typeof(T)]); // Add the component pool to the entity's set of component pools
         Debug.Log($"Add component to World: {typeof(T)} for EntityID: {entityId}");
     }
 
     public void RemoveComponentFromEntity<T>(EntityID entityId) where T : IComponent
     {
         ((ComponentPool<T>)_entityComponentPool[typeof(T)]).Remove(entityId);
+        _entityPools[entityId].Remove(_entityComponentPool[typeof(T)]); // Remove the component pool from the entity's set of component pools
         Debug.Log($"Remove component from World: {typeof(T)} for EntityID: {entityId}");
     }
 

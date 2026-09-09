@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bccfda28484e4947bbbe5863750c4ae, type: 3}
+  m_Name: TestBuilding 1
+  m_EditorClassIdentifier: Game.Runtime::BuidlingDefinition
+  Id:
+    Value: TestBuilding1
+  BuildingType: 5
+  BuildingPrefab: {fileID: 2340122517374870011, guid: ba0608848e290ed48911823af549bb42, type: 3}
+  BuildingShadow: {fileID: 5937271452697851196, guid: 4ef9792149641d446b4987e73746109b, type: 3}
+  BuildingIcon: {fileID: -3695231023619454634, guid: 1a9c1dbcf52501548b24ca401e5fe584, type: 3}
+  GridOccupancy:
+  - {x: 0, y: 0}
+  - {x: 0, y: 1}
+  - {x: 0, y: 2}

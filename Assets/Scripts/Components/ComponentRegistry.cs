@@ -11,6 +11,11 @@ public static class ComponentRegistry
         typeof(MovementTargetComponent),
         typeof(PathComponent),
         typeof(HealthComponent),
-        typeof(StatComponent) // <-- We add our new StatComponent here so the World recognizes it!
+        typeof(GridSnappableComponent),
+        typeof(PhysicColliderRequest),
+        typeof(GridOccupancyComponent),
+        typeof(GridOccupancyRequest),
+        typeof(BuildingComponent),
+        typeof(StatComponent)
     };
 }

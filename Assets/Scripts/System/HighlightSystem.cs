@@ -27,7 +27,7 @@ public class HighlightSystem : IUpdatableSystem, IGameSystem
                 foreach (EntityID entityId in _world.highlightEntities)
                 {
                     // Logic to unhighlight the entity, e.g., remove highlight component or change material
-                    if (WorldBridge.World.GetEntityObject(entityId, out GameObject entityObject))
+                    if (GameBootstrap.World.GetEntityObject(entityId, out GameObject entityObject))
                     {
                         if (entityObject.TryGetComponent(out HighlightDisplay display))
                         {
@@ -40,7 +40,7 @@ public class HighlightSystem : IUpdatableSystem, IGameSystem
                 foreach (EntityID entityID in _world.highlightEntities)
                 {
                     // Logic to highlight the entity, e.g., add highlight component or change material
-                    if (WorldBridge.World.GetEntityObject(entityID, out GameObject entityObject))
+                    if (GameBootstrap.World.GetEntityObject(entityID, out GameObject entityObject))
                     {
                         if (entityObject.TryGetComponent(out HighlightDisplay display))
                         {

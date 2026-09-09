@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class SelectSystem : IFixedUpdatableSystem, IBaseGameSystem
+public class SelectSystem : IUpdatableSystem, IBaseGameSystem
 {
     // Public for now for easy debugging
 
@@ -17,7 +17,7 @@ public class SelectSystem : IFixedUpdatableSystem, IBaseGameSystem
     public void Shutdown() => _world.selectedEntities.Clear();// Cleanup logic for the SelectSystem, if needed
 
     // For now, only allowed to select one entity and selection cleared when selecting another entity.
-    public void FixedUpdate(float deltaTime)
+    public void Update(float deltaTime)
     {
         // Debug.Log("SelectSystem Update called");
         if (_world.Commands.GetCommands(out List<SelectCommand> _selectCommands) && _selectCommands.Count > 0)
